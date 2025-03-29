@@ -1,0 +1,99 @@
+site_name: LlamaChain
+site_description: A modular library for creating robust AI/ML data processing pipelines
+site_author: LlamaChain Team
+site_url: https://llamasearch.github.io/llamachain
+
+repo_name: llamasearch/llamachain
+repo_url: https://github.com/llamasearch/llamachain
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.indexes
+    - navigation.top
+    - search.highlight
+    - search.share
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          selection:
+            docstring_style: google
+          rendering:
+            show_source: true
+            show_root_heading: true
+            show_if_no_docstring: false
+      watch:
+        - llamachain
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed
+  - pymdownx.keys
+  - pymdownx.snippets
+  - admonition
+  - toc:
+      permalink: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - User Guide:
+    - Getting Started: user-guide/getting-started.md
+    - Core Concepts: user-guide/core-concepts.md
+    - API Integration: user-guide/api-integration.md
+    - ML Components: user-guide/ml-components.md
+    - NLP Processing: user-guide/nlp-processing.md
+    - Web Applications: user-guide/web-applications.md
+    - Analytics: user-guide/analytics.md
+    - Security: user-guide/security.md
+  - API Reference:
+    - Core: api/core.md
+    - ML: api/ml.md
+    - NLP: api/nlp.md
+    - API: api/api.md
+    - Analytics: api/analytics.md
+    - Web: api/web.md
+    - Workers: api/workers.md
+    - CLI: api/cli.md
+    - Security: api/security.md
+  - Examples: examples.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/llamasearch/llamachain
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/llamasearch
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/llamachain/
+
+copyright: Copyright &copy; 2023 LlamaSearch.AI 

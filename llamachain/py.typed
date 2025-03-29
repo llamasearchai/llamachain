@@ -1,0 +1,5 @@
+# This file is a marker file indicating the package is typed per PEP 561
+# https://peps.python.org/pep-0561/
+# 
+# This allows type checkers like mypy and pyright to understand that 
+# llamachain is a typed package. 
