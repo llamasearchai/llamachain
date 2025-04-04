@@ -9,55 +9,71 @@ import os
 from setuptools import setup, find_packages
 
 # Get version from package
-with open(os.path.join("llamachain", "__init__.py"), "r") as f:
-    for line in f:
-        if line.startswith("__version__"):
-            version = line.split("=")[1].strip().strip('"').strip("'")
-            break
+try:
+    version_file = os.path.join("src", "llamachain", "__init__.py")
+    if os.path.exists(version_file):
+        with open(version_file, "r") as f:
+            for line in f:
+                if line.startswith("__version__"):
+                    version = line.split("=")[1].strip().strip('"').strip("'")
+                    break
+            else:
+                version = "0.1.0"
     else:
-        version = "0.0.1"
+        version = "0.1.0"
+except Exception:
+    version = "0.1.0"
 
 # Get long description from README
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+try:
+    with open("README.md", "r", encoding="utf-8") as fh:
+        long_description = fh.read()
+except Exception:
+    long_description = "LlamaChain - Blockchain intelligence and analytics platform"
 
 # Parse requirements.txt
-with open("requirements.txt", "r", encoding="utf-8") as f:
-    requirements = []
-    for line in f:
-        line = line.strip()
-        if line and not line.startswith("#") and not line.startswith("# "):
-            # Remove version specifiers
-            if 'spacy-model' in line:
-                continue  # Skip spaCy models as they're installed separately
-            requirements.append(line.split('#')[0].strip())
+requirements = [
+    "requests>=2.28.2",
+    "aiohttp>=3.8.4",
+    "pydantic>=1.10.7",
+    "web3>=6.0.0",
+    "eth-account>=0.8.0",
+    "eth-abi>=4.0.0",
+    "eth-typing>=3.3.0",
+]
+
+try:
+    if os.path.exists("requirements.txt"):
+        with open("requirements.txt", "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and not line.startswith("# "):
+                    # Remove version specifiers
+                    if 'spacy-model' in line:
+                        continue  # Skip spaCy models as they're installed separately
+                    requirements.append(line.split('#')[0].strip())
+except Exception:
+    # If requirements.txt can't be read, use the default requirements defined above
+    pass
 
 # Define package data - include stubs for better IDE integration
 package_data = {
     '': ['py.typed'],  # PEP 561 marker for typed packages
 }
 
-# Include stub files for Pylance
-data_files = [
-    ('stubs/py_ecc', ['stubs/py_ecc/__init__.pyi', 'stubs/py_ecc/bn128.pyi']),
-    ('stubs/spacy', ['stubs/spacy/__init__.pyi']),
-    ('stubs/spacy/cli', ['stubs/spacy/cli/__init__.pyi']),
-    ('stubs/spacy/tokens', ['stubs/spacy/tokens/__init__.pyi']),
-]
-
 setup(
-    name="llamachain",
+    name="llamachain-llamasearch",
     version=version,
-    author="LlamaChain Team",
-    author_email="info@llamachain.io",
+    author="LlamaSearch AI",
+    author_email="nikjois@llamasearch.ai",
     description="Blockchain intelligence and analytics platform",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/llamachain/llamachain",
-    packages=find_packages() + ['stubs', 'stubs.py_ecc', 'stubs.spacy', 'stubs.spacy.cli', 'stubs.spacy.tokens'],
+    url="https://llamasearch.ai",
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
     include_package_data=True,
     package_data=package_data,
-    data_files=data_files,
     install_requires=[req for req in requirements if not any(x in req for x in ('py-ecc', 'spacy', 'transformers', 'torch'))],
     classifiers=[
         "Programming Language :: Python :: 3",
