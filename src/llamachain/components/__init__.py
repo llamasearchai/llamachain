@@ -1,7 +1,7 @@
 """
-Components for LlamaChain pipelines
+Components for the LlamaChain pipeline framework.
 """
 
-from .text_processor import TextProcessor, TextTokenizer, StopWordRemover
+from .text_processor import StopWordRemover, TextProcessor, TextTokenizer
 
-__all__ = ["TextProcessor", "TextTokenizer", "StopWordRemover"] 
+__all__ = ["TextProcessor", "TextTokenizer", "StopWordRemover"]

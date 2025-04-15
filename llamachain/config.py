@@ -11,6 +11,7 @@ from pydantic import AnyHttpUrl, BaseSettings, PostgresDsn, validator
 
 class Environment(str, Enum):
     """Application environment."""
+
     DEVELOPMENT = "development"
     PRODUCTION = "production"
     TESTING = "testing"
@@ -18,52 +19,52 @@ class Environment(str, Enum):
 
 class Settings(BaseSettings):
     """Application settings."""
-    
+
     # Application settings
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
     ENVIRONMENT: Environment = Environment.DEVELOPMENT
     SECRET_KEY: str = "development-secret-change-me-in-production"
-    
+
     # Database settings
     DATABASE_URL: PostgresDsn
-    
+
     # API settings
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
     JWT_SECRET: str = "development-jwt-secret-change-me-in-production"
     API_RATE_LIMIT: int = 100
-    
+
     # Blockchain RPC URLs
     ETHEREUM_RPC_URL: str
     ETHEREUM_WS_URL: Optional[str] = None
     ETHEREUM_TESTNET_RPC_URL: Optional[str] = None
-    
+
     SOLANA_RPC_URL: str
     SOLANA_WS_URL: Optional[str] = None
     SOLANA_TESTNET_RPC_URL: Optional[str] = None
-    
+
     # Security settings
     SECURITY_SCAN_TIMEOUT: int = 60
     SECURITY_MAX_CONTRACT_SIZE: int = 500000
-    
+
     # Analytics settings
     ANALYTICS_CACHE_TTL: int = 3600
     ANALYTICS_MAX_BLOCKS: int = 1000
-    
+
     # Machine learning settings
     ML_MODEL_PATH: str = "./models"
     ML_EMBEDDINGS_DIMENSION: int = 768
-    
+
     # Worker settings
     WORKER_CONCURRENCY: int = 4
     WORKER_QUEUE_URL: str = "redis://localhost:6379/0"
-    
+
     # Web dashboard settings
     DASHBOARD_HOST: str = "0.0.0.0"
     DASHBOARD_PORT: int = 3000
-    
+
     @validator("CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         """Parse CORS origins from string to list."""
@@ -72,9 +73,10 @@ class Settings(BaseSettings):
         elif isinstance(v, (list, str)):
             return v
         raise ValueError(v)
-    
+
     class Config:
         """Pydantic config."""
+
         env_file = ".env"
         case_sensitive = True
 
@@ -91,15 +93,15 @@ def get_settings() -> Settings:
 def get_blockchain_config(chain_id: str) -> dict:
     """
     Get configuration for a specific blockchain.
-    
+
     Args:
         chain_id: The blockchain identifier (e.g., "ethereum", "solana")
-        
+
     Returns:
         Dict with blockchain configuration
     """
     chain_id = chain_id.lower()
-    
+
     if chain_id == "ethereum":
         return {
             "rpc_url": settings.ETHEREUM_RPC_URL,
@@ -138,4 +140,4 @@ def is_production() -> bool:
 
 def is_testing() -> bool:
     """Check if the application is running in test mode."""
-    return settings.ENVIRONMENT == Environment.TESTING 
+    return settings.ENVIRONMENT == Environment.TESTING

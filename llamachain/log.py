@@ -6,24 +6,24 @@ import logging
 import logging.config
 import os
 import sys
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 def setup_logging(log_level: str = "INFO") -> None:
     """
     Configure logging for the application.
-    
+
     Args:
         log_level: The logging level to use (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     """
     # Create logs directory if it doesn't exist
     os.makedirs("logs", exist_ok=True)
-    
+
     # Convert string log level to logging constant
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f"Invalid log level: {log_level}")
-    
+
     # Logging configuration
     logging_config = {
         "version": 1,
@@ -95,10 +95,10 @@ def setup_logging(log_level: str = "INFO") -> None:
             },
         },
     }
-    
+
     # Apply configuration
     logging.config.dictConfig(logging_config)
-    
+
     # Log startup information
     logger = logging.getLogger("llamachain")
     logger.info(f"Logging initialized with level: {log_level}")
@@ -107,11 +107,11 @@ def setup_logging(log_level: str = "INFO") -> None:
 def get_logger(name: str) -> logging.Logger:
     """
     Get a logger with the specified name.
-    
+
     Args:
         name: The name of the logger
-        
+
     Returns:
         A configured logger instance
     """
-    return logging.getLogger(name) 
+    return logging.getLogger(name)

@@ -7,13 +7,12 @@ This script demonstrates the NLP pipeline with example queries.
 import asyncio
 import json
 from pprint import pprint
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
-from llamachain.nlp.processor import NLPProcessor
-from llamachain.nlp.intent import IntentClassifier, Intent
-from llamachain.nlp.entity import EntityExtractor, Entity
+from llamachain.nlp.entity import Entity, EntityExtractor
 from llamachain.nlp.generation import generate_response, generate_structured_query
-
+from llamachain.nlp.intent import Intent, IntentClassifier
+from llamachain.nlp.processor import NLPProcessor
 
 # Sample queries for different intents
 EXAMPLE_QUERIES = {
@@ -93,10 +92,10 @@ MIXED_QUERIES = [
 async def process_query(query: str) -> Dict[str, Any]:
     """
     Process a query through the NLP pipeline.
-    
+
     Args:
         query: The natural language query
-        
+
     Returns:
         Dictionary with structured results from the NLP pipeline
     """
@@ -104,22 +103,22 @@ async def process_query(query: str) -> Dict[str, Any]:
     processor = NLPProcessor()
     intent_classifier = IntentClassifier()
     entity_extractor = EntityExtractor()
-    
+
     # Process the query
     processed_query = await processor.process(query)
-    
+
     # Classify intent
     intent, confidence = await intent_classifier.classify(processed_query)
-    
+
     # Extract entities
     entities = await entity_extractor.extract(processed_query, intent)
-    
+
     # Generate structured query
     structured_query = await generate_structured_query(intent, entities)
-    
+
     # Generate natural language response
     response = await generate_response(intent, entities)
-    
+
     # Return all results
     result = {
         "query": query,
@@ -130,7 +129,7 @@ async def process_query(query: str) -> Dict[str, Any]:
         "structured_query": structured_query,
         "response": response,
     }
-    
+
     return result
 
 
@@ -138,42 +137,46 @@ async def run_all_examples() -> None:
     """Run all example queries and print the results."""
     print("Running examples for each intent type...")
     print("-" * 80)
-    
+
     for intent, queries in EXAMPLE_QUERIES.items():
         print(f"\n## Examples for {intent.value} ##")
         # Take just the first example for each intent to keep output manageable
         query = queries[0]
         print(f"\nQuery: {query}")
-        
+
         try:
             result = await process_query(query)
             print("\nResult:")
-            print(f"  Intent: {result['intent']} (confidence: {result['confidence']:.2f})")
+            print(
+                f"  Intent: {result['intent']} (confidence: {result['confidence']:.2f})"
+            )
             print("  Entities:")
-            for entity in result['entities']:
+            for entity in result["entities"]:
                 print(f"    - {entity['type']}: {entity['value']}")
             print(f"  Response: {result['response']}")
             print("  Structured Query:")
-            pprint(result['structured_query'], indent=4)
+            pprint(result["structured_query"], indent=4)
         except Exception as e:
             print(f"Error processing query: {e}")
-    
+
     print("\n" + "-" * 80)
     print("\n## Mixed Query Examples ##")
-    
+
     for query in MIXED_QUERIES[:2]:  # Just run a couple of mixed examples
         print(f"\nQuery: {query}")
-        
+
         try:
             result = await process_query(query)
             print("\nResult:")
-            print(f"  Intent: {result['intent']} (confidence: {result['confidence']:.2f})")
+            print(
+                f"  Intent: {result['intent']} (confidence: {result['confidence']:.2f})"
+            )
             print("  Entities:")
-            for entity in result['entities']:
+            for entity in result["entities"]:
                 print(f"    - {entity['type']}: {entity['value']}")
             print(f"  Response: {result['response']}")
             print("  Structured Query:")
-            pprint(result['structured_query'], indent=4)
+            pprint(result["structured_query"], indent=4)
         except Exception as e:
             print(f"Error processing query: {e}")
 
@@ -183,38 +186,44 @@ async def interactive_mode() -> None:
     print("Interactive NLP Query Testing")
     print("Type 'exit' or 'quit' to end the session.")
     print("-" * 80)
-    
+
     while True:
         query = input("\nEnter a query: ").strip()
-        
-        if query.lower() in ('exit', 'quit'):
+
+        if query.lower() in ("exit", "quit"):
             break
-            
+
         if not query:
             continue
-            
+
         try:
             result = await process_query(query)
             print("\nResult:")
-            print(f"  Intent: {result['intent']} (confidence: {result['confidence']:.2f})")
+            print(
+                f"  Intent: {result['intent']} (confidence: {result['confidence']:.2f})"
+            )
             print("  Entities:")
-            for entity in result['entities']:
+            for entity in result["entities"]:
                 print(f"    - {entity['type']}: {entity['value']}")
             print(f"  Response: {result['response']}")
             print("  Structured Query:")
-            pprint(result['structured_query'], indent=4)
+            pprint(result["structured_query"], indent=4)
         except Exception as e:
             print(f"Error processing query: {e}")
 
 
 if __name__ == "__main__":
     import argparse
-    
-    parser = argparse.ArgumentParser(description="Test the NLP pipeline with example queries")
-    parser.add_argument("--interactive", "-i", action="store_true", help="Run in interactive mode")
+
+    parser = argparse.ArgumentParser(
+        description="Test the NLP pipeline with example queries"
+    )
+    parser.add_argument(
+        "--interactive", "-i", action="store_true", help="Run in interactive mode"
+    )
     args = parser.parse_args()
-    
+
     if args.interactive:
         asyncio.run(interactive_mode())
     else:
-        asyncio.run(run_all_examples()) 
+        asyncio.run(run_all_examples())

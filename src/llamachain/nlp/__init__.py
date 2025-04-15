@@ -2,7 +2,7 @@
 NLP components for LlamaChain pipelines
 """
 
-from .sentiment import SimpleSentimentAnalyzer
 from .keyword import KeywordExtractor
+from .sentiment import SimpleSentimentAnalyzer
 
-__all__ = ["SimpleSentimentAnalyzer", "KeywordExtractor"] 
+__all__ = ["SimpleSentimentAnalyzer", "KeywordExtractor"]

@@ -252,69 +252,176 @@ for char, count in result:
     print(f"'{char}': {count}")
 ```
 
-## Advanced Example: Text Statistics Component
+## Document Analysis Pipeline
 
-This example demonstrates a more complex custom component that generates statistics about text.
+This example demonstrates a comprehensive document analysis pipeline that combines multiple components to analyze documents. It uses custom components for splitting documents into paragraphs, extracting keywords, performing sentiment analysis, and generating a summary report.
 
 ```python
-from typing import Any, Dict
-from collections import Counter
-from llamachain.core import Component, Pipeline
+from typing import Dict, List, Any
+from datetime import datetime
+
+from llamachain.core import Pipeline, Component
 from llamachain.components import TextProcessor
+from llamachain.nlp import KeywordExtractor, SimpleSentimentAnalyzer
 
-class TextStatistics(Component):
-    def process(self, input_data: str) -> Dict[str, Any]:
-        # Count characters
-        char_count = len(input_data)
+
+class DocumentSplitter(Component):
+    """Custom component to split documents into paragraphs"""
+    
+    def __init__(self, min_length: int = 20):
+        """Initialize the document splitter
         
-        # Count words
-        words = input_data.split()
-        word_count = len(words)
+        Args:
+            min_length: Minimum length of paragraph to keep
+        """
+        self.min_length = min_length
         
-        # Count unique words
-        unique_words = set(word.lower() for word in words)
-        unique_word_count = len(unique_words)
+    def process(self, input_data: str) -> List[str]:
+        """Split document into paragraphs
         
-        # Calculate average word length
-        avg_word_length = sum(len(word) for word in words) / word_count if word_count > 0 else 0
+        Args:
+            input_data: Text document to split
+            
+        Returns:
+            List of paragraphs
+        """
+        if not isinstance(input_data, str):
+            raise TypeError(f"Expected string, got {type(input_data).__name__}")
+            
+        paragraphs = [p.strip() for p in input_data.split('\n\n')]
+        return [p for p in paragraphs if len(p) >= self.min_length]
+
+
+class SummaryGenerator(Component):
+    """Custom component to generate a summary from analysis results"""
+    
+    def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate summary from sentiment and keyword analysis
         
-        # Count sentences (simple approach)
-        sentence_count = input_data.count('.') + input_data.count('!') + input_data.count('?')
+        Args:
+            input_data: Dictionary with analysis results
+            
+        Returns:
+            Updated dictionary with added summary
+        """
+        if not isinstance(input_data, dict):
+            raise TypeError(f"Expected dictionary, got {type(input_data).__name__}")
+            
+        # Extract sentiment statistics
+        sentiments = input_data.get('sentiment_by_paragraph', {})
+        pos_count = sum(1 for s in sentiments.values() if s['sentiment'] == 'positive')
+        neg_count = sum(1 for s in sentiments.values() if s['sentiment'] == 'negative')
+        neutral_count = sum(1 for s in sentiments.values() if s['sentiment'] == 'neutral')
         
-        # Word frequency
-        word_freq = Counter(word.lower() for word in words)
-        top_words = word_freq.most_common(5)
+        # Extract keyword information
+        keywords = input_data.get('keywords', [])
         
-        return {
-            "character_count": char_count,
-            "word_count": word_count,
-            "unique_word_count": unique_word_count,
-            "average_word_length": avg_word_length,
-            "sentence_count": sentence_count,
-            "top_words": top_words
+        # Generate summary text
+        summary = (
+            f"Document Analysis Summary:\n"
+            f"- Document contains {len(sentiments)} paragraphs\n"
+            f"- Overall sentiment: {pos_count} positive, {neg_count} negative, {neutral_count} neutral paragraphs\n"
+            f"- Primary sentiment: {max(['positive', 'negative', 'neutral'], key=lambda s: [pos_count, neg_count, neutral_count][['positive', 'negative', 'neutral'].index(s)])}\n"
+            f"- Top keywords: {', '.join(keywords[:5]) if keywords else 'None found'}\n"
+            f"- Analysis completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        
+        # Return updated results with summary
+        result = input_data.copy()
+        result['summary'] = summary
+        return result
+
+
+class DocumentAnalyzer:
+    """Helper class to analyze documents using LlamaChain pipelines"""
+    
+    def __init__(self):
+        """Initialize the document analyzer with components and pipelines"""
+        # Create text processing components
+        self.text_processor = TextProcessor(lowercase=True, normalize_whitespace=True)
+        self.document_splitter = DocumentSplitter(min_length=30)
+        self.sentiment_analyzer = SimpleSentimentAnalyzer()
+        self.keyword_extractor = KeywordExtractor(max_keywords=10)
+        self.summary_generator = SummaryGenerator()
+        
+        # Create individual pipelines for different tasks
+        self.preprocess_pipeline = Pipeline([
+            self.text_processor,
+            self.document_splitter,
+        ])
+        
+        self.keyword_pipeline = Pipeline([
+            self.text_processor,
+            self.keyword_extractor,
+        ])
+    
+    def analyze_document(self, document_text: str) -> Dict[str, Any]:
+        """Analyze a document using multiple pipelines
+        
+        Args:
+            document_text: The document to analyze
+            
+        Returns:
+            Dictionary with analysis results and summary
+        """
+        # Process document
+        paragraphs = self.preprocess_pipeline.process(document_text)
+        
+        # Extract keywords from entire document
+        keywords = self.keyword_pipeline.process(document_text)
+        
+        # Analyze sentiment of each paragraph
+        sentiment_by_paragraph = {}
+        for i, paragraph in enumerate(paragraphs):
+            sentiment = self.sentiment_analyzer.process(paragraph)
+            sentiment_by_paragraph[f"paragraph_{i+1}"] = sentiment
+        
+        # Collect all results
+        results = {
+            'document_length': len(document_text),
+            'paragraph_count': len(paragraphs),
+            'paragraphs': paragraphs,
+            'keywords': keywords,
+            'sentiment_by_paragraph': sentiment_by_paragraph,
         }
+        
+        # Generate summary
+        final_results = self.summary_generator.process(results)
+        
+        return final_results
 
-# Create pipeline with TextProcessor and TextStatistics
-pipeline = Pipeline([
-    TextProcessor(lowercase=False, normalize_whitespace=True),
-    TextStatistics(),
-])
 
-# Process a sample text
-sample_text = "The quick brown fox jumps over the lazy dog. Fox is a swift animal. Dogs are loyal pets!"
-stats = pipeline.run(sample_text)
+# Usage example
+sample_document = """
+Artificial Intelligence: Transforming the Future
 
-print(f"Text: {sample_text}")
-print(f"Character count: {stats['character_count']}")
-print(f"Word count: {stats['word_count']}")
-print(f"Unique word count: {stats['unique_word_count']}")
-print(f"Average word length: {stats['average_word_length']:.2f} characters")
-print(f"Sentence count: {stats['sentence_count']}")
+Artificial intelligence (AI) has rapidly evolved over the past decade, transforming from a niche research field into a technology that touches almost every aspect of our daily lives.
 
-print("Top 5 words:")
-for word, count in stats['top_words']:
-    print(f"- '{word}': {count}")
+The growth of machine learning, particularly deep learning, has been the driving force behind this AI revolution. Neural networks, inspired by the human brain, have demonstrated remarkable abilities in various domains from image recognition to natural language processing.
+
+However, the rise of AI also brings challenges. Ethical concerns regarding privacy, bias, and job displacement have become increasingly important as these technologies become more pervasive.
+
+Despite these challenges, the potential benefits of AI are enormous. In healthcare, AI systems can help diagnose diseases earlier and more accurately than human doctors in some cases. In transportation, autonomous vehicles promise to reduce accidents and traffic congestion while increasing mobility for those who cannot drive.
+"""
+
+analyzer = DocumentAnalyzer()
+results = analyzer.analyze_document(sample_document)
+
+print(f"Document length: {results['document_length']} characters")
+print(f"Paragraph count: {results['paragraph_count']}")
+print("\nTop keywords:")
+for keyword in results['keywords'][:5]:
+    print(f"- {keyword}")
+    
+print("\nSummary Report:")
+print(results['summary'])
 ```
+
+This example demonstrates more advanced techniques including:
+- Creating specialized component classes for specific document processing tasks
+- Building helper classes that combine multiple pipelines 
+- Managing complex processing flows with multiple stages
+- Generating summary reports from analyzed data
 
 ## Combining with Built-in Components
 
@@ -342,6 +449,235 @@ print("Word counts:")
 for word, count in result.most_common():
     print(f"- '{word}': {count}")
 ```
+
+## Data Transformation
+
+This example demonstrates how to create a data transformation pipeline that processes structured data (JSON) through multiple transformation steps.
+
+```python
+from typing import Dict, List, Any
+import json
+
+from llamachain.core import Pipeline, Component
+
+
+class DataFilter(Component):
+    """Component to filter data based on conditions"""
+    
+    def __init__(self, field: str, condition: callable, name=None, config=None):
+        """Initialize the data filter
+        
+        Args:
+            field: The field to filter on
+            condition: Function that returns True for items to keep
+            name: Optional component name
+            config: Optional component configuration
+        """
+        self.field = field
+        self.condition = condition
+        super().__init__(name, config)
+    
+    def process(self, input_data: List[Dict]) -> List[Dict]:
+        """Filter a list of dictionaries based on the condition"""
+        if not isinstance(input_data, list):
+            raise TypeError(f"Expected list, got {type(input_data).__name__}")
+            
+        return [item for item in input_data if self.field in item and self.condition(item[self.field])]
+
+
+class DataMapper(Component):
+    """Component to map data from one format to another"""
+    
+    def __init__(self, mapping: Dict[str, str], name=None, config=None):
+        """Initialize the data mapper
+        
+        Args:
+            mapping: Dictionary mapping source fields to target fields
+        """
+        self.mapping = mapping
+        super().__init__(name, config)
+    
+    def process(self, input_data: List[Dict]) -> List[Dict]:
+        """Map fields in a list of dictionaries"""
+        if not isinstance(input_data, list):
+            raise TypeError(f"Expected list, got {type(input_data).__name__}")
+            
+        result = []
+        for item in input_data:
+            new_item = {}
+            for source_field, target_field in self.mapping.items():
+                if source_field in item:
+                    new_item[target_field] = item[source_field]
+            result.append(new_item)
+        
+        return result
+
+
+# Sample data
+sample_data = [
+    {"id": 1, "product": "Widget", "category": "A", "price": 10.0, "quantity": 5},
+    {"id": 2, "product": "Gadget", "category": "B", "price": 20.0, "quantity": 3},
+    {"id": 3, "product": "Tool", "category": "A", "price": 15.0, "quantity": 2},
+]
+
+# Create a pipeline to filter, transform, and calculate sales
+pipeline = Pipeline([
+    # Filter items in category A
+    DataFilter(
+        field="category",
+        condition=lambda x: x == "A",
+    ),
+    
+    # Map fields to new structure
+    DataMapper(
+        mapping={
+            "product": "item_name",
+            "price": "unit_price",
+            "quantity": "units_sold"
+        }
+    ),
+    
+    # Calculate total sales amount
+    Component(
+        name="SalesCalculator",
+        process=lambda items: [
+            {**item, "total_sales": item["unit_price"] * item["units_sold"]} 
+            for item in items
+        ]
+    ),
+])
+
+# Process the data
+result = pipeline.run(sample_data)
+print(json.dumps(result, indent=2))
+# Output:
+# [
+#   {
+#     "item_name": "Widget",
+#     "unit_price": 10.0,
+#     "units_sold": 5,
+#     "total_sales": 50.0
+#   },
+#   {
+#     "item_name": "Tool",
+#     "unit_price": 15.0,
+#     "units_sold": 2,
+#     "total_sales": 30.0
+#   }
+# ]
+```
+
+This example showcases:
+- Creating components for data filtering and field mapping
+- Processing structured data (JSON) through transformation pipelines
+- Using lambda functions with Component for simple transformations
+- Building data processing workflows for business applications
+
+## Data Visualization
+
+This example demonstrates how to create visualizations from data using chart components and different renderers.
+
+```python
+from llamachain.core import Pipeline
+from llamachain.visualization import BarChart, LineChart, PieChart, HTMLRenderer, TerminalRenderer
+
+# Sample data - quarterly sales
+sales_data = {
+    "Q1": 120,
+    "Q2": 180,
+    "Q3": 240,
+    "Q4": 160
+}
+
+# Create a pipeline with BarChart and HTML renderer
+pipeline = Pipeline([
+    # Transform the data into a bar chart
+    BarChart(
+        title="Quarterly Sales",
+        x_label="Quarter",
+        y_label="Sales ($1,000)",
+        name="SalesBarChart"
+    ),
+    # Render the chart as HTML
+    HTMLRenderer(
+        output_file="sales_chart.html",
+        name="HTMLOutput"
+    )
+])
+
+# Process the data
+result = pipeline.run(sales_data)
+print(f"Bar chart rendered to HTML: {result}")
+
+# Create a pipeline with BarChart and Terminal renderer for text-based visualization
+terminal_pipeline = Pipeline([
+    BarChart(
+        title="Quarterly Sales",
+        name="SalesBarChart"
+    ),
+    TerminalRenderer(
+        width=60,
+        height=15,
+        name="TerminalOutput"
+    )
+])
+
+# Process the data and display in terminal
+terminal_result = terminal_pipeline.run(sales_data)
+print("\nTerminal Bar Chart:")
+print(terminal_result)
+```
+
+The visualization module provides several chart types:
+
+1. **Bar Charts** for categorical data
+   ```python
+   bar_chart = BarChart(
+       title="Quarterly Sales",
+       x_label="Quarter", 
+       y_label="Sales",
+       horizontal=False  # Set to True for horizontal bars
+   )
+   ```
+
+2. **Line Charts** for time series or sequential data
+   ```python
+   line_chart = LineChart(
+       title="Monthly Revenue",
+       x_label="Month",
+       y_label="Revenue",
+       show_points=True  # Whether to display points on the line
+   )
+   ```
+
+3. **Pie Charts** for showing proportions
+   ```python
+   pie_chart = PieChart(
+       title="Market Share",
+       donut=False  # Set to True for donut chart
+   )
+   ```
+
+Charts can be rendered in different formats:
+
+1. **HTML Renderer** for web-based interactive charts
+   ```python
+   html_renderer = HTMLRenderer(
+       output_file="chart.html",  # File to save the chart (optional)
+       include_scripts=True       # Whether to include Chart.js scripts
+   )
+   ```
+
+2. **Terminal Renderer** for text-based charts in the console
+   ```python
+   terminal_renderer = TerminalRenderer(
+       width=80,       # Width in characters
+       height=20,      # Height in characters
+       character="█"   # Character to use for plotting
+   )
+   ```
+
+This visualization system can be combined with data transformation components to create powerful data analysis and reporting pipelines.
 
 ## Running the Examples
 

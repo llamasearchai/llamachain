@@ -6,4 +6,4 @@ This module provides a FastAPI-based REST API for interacting with the LlamaChai
 
 from llamachain.api.app import app
 
-__all__ = ["app"] 
+__all__ = ["app"]

@@ -6,9 +6,9 @@ This module initializes and runs the FastAPI application.
 
 import logging
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -66,7 +66,7 @@ except Exception as e:
 async def startup_event():
     """Run startup tasks."""
     logger.info("Starting LlamaChain application")
-    
+
     # Initialize database
     try:
         await init_db()
@@ -113,10 +113,10 @@ async def info():
 async def process_query(request: Dict[str, Any]):
     """
     Process a natural language query.
-    
+
     Args:
         request: Request data containing the query
-        
+
     Returns:
         Processed query information
     """
@@ -124,16 +124,16 @@ async def process_query(request: Dict[str, Any]):
         query = request.get("query")
         if not query:
             raise HTTPException(status_code=400, detail="Query is required")
-        
+
         # Process the query
         processed_query = await nlp_processor.process_query(query)
-        
+
         # Generate response
         response = await nlp_processor.generate_response(processed_query)
-        
+
         # Translate to structured query
         structured_query = await nlp_processor.translate_to_query(processed_query)
-        
+
         return {
             "query": query,
             "intent": processed_query["intent"],
@@ -141,7 +141,7 @@ async def process_query(request: Dict[str, Any]):
             "response": response,
             "structured_query": structured_query,
         }
-    
+
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -159,10 +159,10 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         "llamachain.app:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,
-    ) 
+    )

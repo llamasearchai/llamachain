@@ -10,12 +10,14 @@ from typing import Dict, List, Set
 
 class BlockchainType(str, Enum):
     """Supported blockchain types."""
+
     ETHEREUM = "ethereum"
     SOLANA = "solana"
 
 
 class AuditSeverityLevel(str, Enum):
     """Audit severity levels."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -25,6 +27,7 @@ class AuditSeverityLevel(str, Enum):
 
 class AlertType(str, Enum):
     """Types of alerts."""
+
     SECURITY = "security"
     PRICE = "price"
     VOLUME = "volume"
@@ -35,11 +38,12 @@ class AlertType(str, Enum):
 
 class BlockchainNetwork(str, Enum):
     """Blockchain networks."""
+
     # Ethereum networks
     ETH_MAINNET = "eth_mainnet"
     ETH_GOERLI = "eth_goerli"
     ETH_SEPOLIA = "eth_sepolia"
-    
+
     # Solana networks
     SOL_MAINNET = "sol_mainnet"
     SOL_DEVNET = "sol_devnet"
@@ -48,6 +52,7 @@ class BlockchainNetwork(str, Enum):
 
 class ContractType(str, Enum):
     """Smart contract types."""
+
     ERC20 = "erc20"
     ERC721 = "erc721"
     ERC1155 = "erc1155"
@@ -62,6 +67,7 @@ class ContractType(str, Enum):
 
 class VulnerabilityType(str, Enum):
     """Vulnerability types."""
+
     REENTRANCY = "reentrancy"
     INTEGER_OVERFLOW = "integer_overflow"
     INTEGER_UNDERFLOW = "integer_underflow"
@@ -116,23 +122,26 @@ GAS_PRICE_MEDIUM = 60
 GAS_PRICE_HIGH = 100
 
 # File extensions for smart contracts
-SOLIDITY_EXTENSIONS = {'.sol'}
-RUST_EXTENSIONS = {'.rs'}
+SOLIDITY_EXTENSIONS = {".sol"}
+RUST_EXTENSIONS = {".rs"}
 
 # Timestamp constants
 SECONDS_PER_DAY = 86400
 SECONDS_PER_HOUR = 3600
 SECONDS_PER_MINUTE = 60
 
+
 # Transaction status
 class TransactionStatus(str, Enum):
     """Transaction status values."""
+
     PENDING = "pending"
     SUCCESS = "success"
     FAILURE = "failure"
     DROPPED = "dropped"
     REPLACED = "replaced"
     UNKNOWN = "unknown"
+
 
 # Feature flags
 FEATURE_FLAGS = {
@@ -145,4 +154,4 @@ FEATURE_FLAGS = {
 
 # Rate limiting constants
 API_RATE_LIMIT_DEFAULT = 100  # requests per minute
-API_RATE_LIMIT_AUTHENTICATED = 500  # requests per minute 
+API_RATE_LIMIT_AUTHENTICATED = 500  # requests per minute

@@ -7,13 +7,13 @@ Usage:
     python generate_tests.py
 """
 
-import os
-import re
-import inspect
 import importlib
+import inspect
+import os
 import pkgutil
+import re
 from pathlib import Path
-from typing import List, Dict, Set, Any, Type
+from typing import Any, Dict, List, Set, Type
 
 # Root path of the repository
 REPO_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,6 +22,7 @@ TESTS_PATH = os.path.join(REPO_PATH, "tests")
 
 # Add the src directory to Python path
 import sys
+
 sys.path.insert(0, SRC_PATH)
 
 # Template for test files
@@ -58,7 +59,7 @@ def find_component_classes() -> Dict[str, List[Type]]:
     try:
         # Import the Component base class
         from llamachain.core import Component
-        
+
         # Walk through the llamachain package
         llamachain_pkg = importlib.import_module("llamachain")
         for _, module_name, is_pkg in pkgutil.walk_packages(llamachain_pkg.__path__, llamachain_pkg.__name__ + '.'):

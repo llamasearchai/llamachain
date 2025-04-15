@@ -2,8 +2,7 @@
 Database session management.
 """
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -33,9 +32,9 @@ Base = declarative_base()
 async def get_db() -> AsyncSession:
     """
     Get a database session.
-    
+
     This function is used as a dependency in FastAPI endpoints.
-    
+
     Returns:
         AsyncSession: Database session
     """
@@ -54,9 +53,9 @@ async def get_db() -> AsyncSession:
 async def init_db():
     """
     Initialize the database.
-    
+
     Creates all tables if they don't exist.
     """
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database initialized") 
+    logger.info("Database initialized")

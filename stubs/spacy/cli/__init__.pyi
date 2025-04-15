@@ -3,7 +3,19 @@ Type stubs for spaCy CLI module.
 
 This file helps Pylance understand the interface of spaCy's CLI tools.
 """
-from typing import Any, Dict, List, Optional, Union, Callable, Iterator, Set, Tuple, Type
+
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
 def download(model: str, direct: bool = False, *args: Any, **kwargs: Any) -> None: ...
 def info(*args: Any, **kwargs: Any) -> None: ...
@@ -13,4 +25,4 @@ def evaluate(*args: Any, **kwargs: Any) -> None: ...
 def convert(*args: Any, **kwargs: Any) -> None: ...
 def init_model(*args: Any, **kwargs: Any) -> None: ...
 def link(*args: Any, **kwargs: Any) -> None: ...
-def profile(*args: Any, **kwargs: Any) -> None: ... 
+def profile(*args: Any, **kwargs: Any) -> None: ...

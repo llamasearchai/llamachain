@@ -5,23 +5,22 @@ This module defines the FastAPI application and server for the LlamaChain API.
 """
 
 import asyncio
-from typing import Optional, Dict, Any
 import time
+from typing import Any, Dict, Optional
 
 import uvicorn
-from fastapi import FastAPI, Request, Response, Depends
+from fastapi import Depends, FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-
-from llamachain.config import settings
-from llamachain.db.session import init_db
-from llamachain.log import get_logger
-from llamachain.api.endpoints.dashboard import router as dashboard_router
 
 # Import API routers
 from llamachain.api.endpoints.blockchain import router as blockchain_router
+from llamachain.api.endpoints.dashboard import router as dashboard_router
+from llamachain.config import settings
+from llamachain.db.session import init_db
+from llamachain.log import get_logger
 
 # Setup logger
 logger = get_logger("llamachain.api")
@@ -53,11 +52,11 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 async def log_requests(request: Request, call_next) -> Response:
     """
     Log request information and timing.
-    
+
     Args:
         request: The incoming request
         call_next: The next middleware or route handler
-        
+
     Returns:
         The response
     """
@@ -65,18 +64,18 @@ async def log_requests(request: Request, call_next) -> Response:
     path = request.url.path
     query = str(request.url.query)
     query_text = f"?{query}" if query else ""
-    
+
     logger.info(f"Request: {request.method} {path}{query_text}")
-    
+
     try:
         response = await call_next(request)
         process_time = time.time() - start_time
-        
+
         logger.info(
             f"Response: {request.method} {path} - Status: {response.status_code} - "
             f"Time: {process_time:.4f}s"
         )
-        
+
         # Add processing time header
         response.headers["X-Process-Time"] = str(process_time)
         return response
@@ -111,7 +110,7 @@ async def shutdown_db_client() -> None:
 async def root() -> Dict[str, Any]:
     """
     Root endpoint that returns API information.
-    
+
     Returns:
         Dict with API information
     """
@@ -128,7 +127,7 @@ async def root() -> Dict[str, Any]:
 async def health_check() -> Dict[str, Any]:
     """
     Health check endpoint.
-    
+
     Returns:
         Dict with health status
     """
@@ -165,18 +164,16 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 async def start_api_server(
-    host: str = settings.API_HOST,
-    port: int = settings.API_PORT,
-    reload: bool = False
+    host: str = settings.API_HOST, port: int = settings.API_PORT, reload: bool = False
 ) -> int:
     """
     Start the API server.
-    
+
     Args:
         host: Host to bind to
         port: Port to bind to
         reload: Whether to enable auto-reload
-        
+
     Returns:
         Exit code
     """
@@ -187,12 +184,12 @@ async def start_api_server(
         reload=reload,
         log_level="info",
     )
-    
+
     server = uvicorn.Server(config)
-    
+
     try:
         await server.serve()
         return 0
     except Exception as e:
         logger.error(f"Error starting API server: {e}")
-        return 1 
+        return 1

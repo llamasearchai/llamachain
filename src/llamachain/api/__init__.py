@@ -2,7 +2,7 @@
 API components for LlamaChain pipelines
 """
 
-from .request import APIRequest, RESTEndpoint
 from .extractor import JSONExtractor
+from .request import APIRequest, RESTEndpoint
 
-__all__ = ["APIRequest", "RESTEndpoint", "JSONExtractor"] 
+__all__ = ["APIRequest", "RESTEndpoint", "JSONExtractor"]

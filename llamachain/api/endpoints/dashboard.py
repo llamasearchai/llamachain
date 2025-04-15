@@ -4,20 +4,20 @@ Dashboard API endpoints for the LlamaChain platform.
 This module provides API endpoints for retrieving dashboard data and visualizations.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from llamachain.analytics.dashboard import (
+    get_chain_comparison,
+    get_gas_price_chart,
     get_network_summary,
-    get_recent_transactions,
+    get_platform_stats,
     get_recent_blocks,
+    get_recent_transactions,
     get_security_alerts,
     get_transaction_volume_chart,
-    get_gas_price_chart,
-    get_platform_stats,
-    get_chain_comparison,
 )
 from llamachain.db.session import get_db
 from llamachain.log import get_logger
@@ -33,7 +33,7 @@ logger = get_logger("llamachain.api.endpoints.dashboard")
 async def get_dashboard_summary():
     """
     Get a summary of key platform metrics for the dashboard.
-    
+
     Returns:
         Dictionary with summary metrics
     """
@@ -50,23 +50,25 @@ async def get_dashboard_summary():
         }
     except Exception as e:
         logger.error(f"Error getting dashboard summary: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting dashboard summary: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting dashboard summary: {str(e)}"
+        )
 
 
 @router.get("/network/stats/{chain}")
 async def get_network_stats(
     chain: str = Path(..., description="Blockchain (ethereum, solana)"),
     days: int = Query(7, description="Number of days of data to display"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get network statistics for a specific blockchain.
-    
+
     Args:
         chain: Blockchain identifier (ethereum, solana)
         days: Number of days of data to include
         db: Database session
-        
+
     Returns:
         Dictionary with network statistics
     """
@@ -79,7 +81,9 @@ async def get_network_stats(
         raise
     except Exception as e:
         logger.error(f"Error getting network stats for {chain}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting network stats: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting network stats: {str(e)}"
+        )
 
 
 @router.get("/transactions/recent/{chain}")
@@ -87,23 +91,23 @@ async def get_recent_tx(
     chain: str = Path(..., description="Blockchain (ethereum, solana)"),
     limit: int = Query(10, description="Number of transactions to retrieve"),
     include_details: bool = Query(False, description="Include transaction details"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get recent transactions for a specific blockchain.
-    
+
     Args:
         chain: Blockchain identifier (ethereum, solana)
         limit: Maximum number of transactions to return
         include_details: Whether to include transaction details
         db: Database session
-        
+
     Returns:
         List of recent transactions
     """
     try:
         transactions = await get_recent_transactions(chain, limit, db)
-        
+
         # If include_details is False, remove some fields for a lighter response
         if not include_details:
             for tx in transactions:
@@ -111,11 +115,17 @@ async def get_recent_tx(
                 for field in ["gas_used", "gas_price", "status"]:
                     if field in tx:
                         del tx[field]
-        
-        return {"chain": chain, "transactions": transactions, "count": len(transactions)}
+
+        return {
+            "chain": chain,
+            "transactions": transactions,
+            "count": len(transactions),
+        }
     except Exception as e:
         logger.error(f"Error getting recent transactions for {chain}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting recent transactions: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting recent transactions: {str(e)}"
+        )
 
 
 @router.get("/blocks/recent/{chain}")
@@ -123,49 +133,55 @@ async def get_recent_block(
     chain: str = Path(..., description="Blockchain (ethereum, solana)"),
     limit: int = Query(10, description="Number of blocks to retrieve"),
     include_transactions: bool = Query(False, description="Include block transactions"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get recent blocks for a specific blockchain.
-    
+
     Args:
         chain: Blockchain identifier (ethereum, solana)
         limit: Maximum number of blocks to return
         include_transactions: Whether to include block transactions
         db: Database session
-        
+
     Returns:
         List of recent blocks
     """
     try:
         blocks = await get_recent_blocks(chain, limit, db)
-        
+
         # Include transactions if requested (this would require additional code)
         if include_transactions:
             logger.warning("Including transactions in blocks is not yet implemented")
-            
+
         return {"chain": chain, "blocks": blocks, "count": len(blocks)}
     except Exception as e:
         logger.error(f"Error getting recent blocks for {chain}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting recent blocks: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting recent blocks: {str(e)}"
+        )
 
 
 @router.get("/security/alerts")
 async def get_security_alert(
     limit: int = Query(10, description="Number of alerts to retrieve"),
-    severity: Optional[str] = Query(None, description="Alert severity filter (low, medium, high, critical)"),
-    chain: Optional[str] = Query(None, description="Blockchain filter (ethereum, solana)"),
-    db: AsyncSession = Depends(get_db)
+    severity: Optional[str] = Query(
+        None, description="Alert severity filter (low, medium, high, critical)"
+    ),
+    chain: Optional[str] = Query(
+        None, description="Blockchain filter (ethereum, solana)"
+    ),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get security alerts.
-    
+
     Args:
         limit: Maximum number of alerts to return
         severity: Filter by severity level
         chain: Filter by blockchain
         db: Database session
-        
+
     Returns:
         List of security alerts
     """
@@ -174,25 +190,29 @@ async def get_security_alert(
         return {"alerts": alerts, "count": len(alerts)}
     except Exception as e:
         logger.error(f"Error getting security alerts: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting security alerts: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting security alerts: {str(e)}"
+        )
 
 
 @router.get("/security/vulnerabilities")
 async def get_vulnerability_summary(
     days: int = Query(30, description="Number of days of data to analyze"),
-    chain: Optional[str] = Query(None, description="Blockchain filter (ethereum, solana)"),
+    chain: Optional[str] = Query(
+        None, description="Blockchain filter (ethereum, solana)"
+    ),
     category: Optional[str] = Query(None, description="Vulnerability category filter"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get a summary of detected vulnerabilities.
-    
+
     Args:
         days: Number of days of data to include
         chain: Filter by blockchain
         category: Filter by vulnerability category
         db: Database session
-        
+
     Returns:
         Summary of vulnerabilities
     """
@@ -217,27 +237,32 @@ async def get_vulnerability_summary(
         }
     except Exception as e:
         logger.error(f"Error getting vulnerability summary: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting vulnerability summary: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting vulnerability summary: {str(e)}"
+        )
 
 
 @router.get("/visualizations/chart-data")
 async def get_chart_data(
-    chart_type: str = Query(..., description="Chart type (transaction_volume, gas_price, active_addresses, etc.)"),
+    chart_type: str = Query(
+        ...,
+        description="Chart type (transaction_volume, gas_price, active_addresses, etc.)",
+    ),
     chain: str = Query("ethereum", description="Blockchain (ethereum, solana)"),
     days: int = Query(7, description="Number of days of data to display"),
     interval: str = Query("1h", description="Data interval (1h, 4h, 1d)"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get data for charts and visualizations.
-    
+
     Args:
         chart_type: Type of chart data to retrieve
         chain: Blockchain identifier (ethereum, solana)
         days: Number of days of data to include
         interval: Time interval for data points
         db: Database session
-        
+
     Returns:
         Chart data in the appropriate format
     """
@@ -247,31 +272,39 @@ async def get_chart_data(
         elif chart_type == "gas_price":
             data = await get_gas_price_chart(chain, days, interval, db)
         else:
-            raise HTTPException(status_code=400, detail=f"Unsupported chart type: {chart_type}")
-        
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported chart type: {chart_type}"
+            )
+
         if "error" in data:
             raise HTTPException(status_code=500, detail=data["error"])
-            
+
         return data
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting chart data for {chart_type}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting chart data: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting chart data: {str(e)}"
+        )
 
 
 @router.get("/visualizations/network-data")
 async def get_network_visualization_data(
     chain: str = Query("ethereum", description="Blockchain (ethereum, solana)"),
-    scope: str = Query("global", description="Visualization scope (global, address, contract)"),
-    address: Optional[str] = Query(None, description="Address for address-specific visualization"),
+    scope: str = Query(
+        "global", description="Visualization scope (global, address, contract)"
+    ),
+    address: Optional[str] = Query(
+        None, description="Address for address-specific visualization"
+    ),
     depth: int = Query(1, description="Network depth for address visualization"),
     limit: int = Query(100, description="Maximum number of nodes to include"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get data for network visualizations.
-    
+
     Args:
         chain: Blockchain identifier (ethereum, solana)
         scope: Visualization scope (global, address, contract)
@@ -279,15 +312,17 @@ async def get_network_visualization_data(
         depth: Network depth for address visualization
         limit: Maximum number of nodes to include
         db: Database session
-        
+
     Returns:
         Network visualization data
     """
     try:
         # This is a placeholder that would normally generate network visualization data
         if scope == "address" and not address:
-            raise HTTPException(status_code=400, detail="Address required for address scope")
-            
+            raise HTTPException(
+                status_code=400, detail="Address required for address scope"
+            )
+
         # Placeholder response with minimal network data
         return {
             "chain": chain,
@@ -307,19 +342,20 @@ async def get_network_visualization_data(
         raise
     except Exception as e:
         logger.error(f"Error getting network visualization data: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting network visualization data: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting network visualization data: {str(e)}",
+        )
 
 
 @router.get("/stats/platform")
-async def get_platform_stat(
-    db: AsyncSession = Depends(get_db)
-):
+async def get_platform_stat(db: AsyncSession = Depends(get_db)):
     """
     Get platform usage statistics.
-    
+
     Args:
         db: Database session
-        
+
     Returns:
         Platform statistics
     """
@@ -332,19 +368,19 @@ async def get_platform_stat(
         raise
     except Exception as e:
         logger.error(f"Error getting platform stats: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting platform stats: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting platform stats: {str(e)}"
+        )
 
 
 @router.get("/stats/chains")
-async def get_chain_compare(
-    db: AsyncSession = Depends(get_db)
-):
+async def get_chain_compare(db: AsyncSession = Depends(get_db)):
     """
     Get comparison data between different blockchains.
-    
+
     Args:
         db: Database session
-        
+
     Returns:
         Chain comparison data
     """
@@ -357,7 +393,9 @@ async def get_chain_compare(
         raise
     except Exception as e:
         logger.error(f"Error getting chain comparison: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting chain comparison: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting chain comparison: {str(e)}"
+        )
 
 
 @router.get("/address/summary/{chain}/{address}")
@@ -365,17 +403,17 @@ async def get_address_summary(
     chain: str = Path(..., description="Blockchain (ethereum, solana)"),
     address: str = Path(..., description="Address to analyze"),
     days: int = Query(30, description="Number of days of data to analyze"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get summary information for an address.
-    
+
     Args:
         chain: Blockchain identifier (ethereum, solana)
         address: Address to analyze
         days: Number of days of data to include
         db: Database session
-        
+
     Returns:
         Address summary information
     """
@@ -394,7 +432,9 @@ async def get_address_summary(
         }
     except Exception as e:
         logger.error(f"Error getting address summary for {address}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting address summary: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error getting address summary: {str(e)}"
+        )
 
 
 @router.get("/contract/summary/{chain}/{address}")
@@ -402,17 +442,17 @@ async def get_contract_summary(
     chain: str = Path(..., description="Blockchain (ethereum, solana)"),
     address: str = Path(..., description="Contract address to analyze"),
     days: int = Query(30, description="Number of days of data to analyze"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get summary information for a smart contract.
-    
+
     Args:
         chain: Blockchain identifier (ethereum, solana)
         address: Contract address to analyze
         days: Number of days of data to include
         db: Database session
-        
+
     Returns:
         Contract summary information
     """
@@ -431,4 +471,6 @@ async def get_contract_summary(
         }
     except Exception as e:
         logger.error(f"Error getting contract summary for {address}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error getting contract summary: {str(e)}") 
+        raise HTTPException(
+            status_code=500, detail=f"Error getting contract summary: {str(e)}"
+        )
